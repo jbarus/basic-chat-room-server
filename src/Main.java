@@ -4,42 +4,17 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class Main {
+    private static ServerSocket serverSocket;
+    private static int port = 55555;
+    private static int count = 1;
     public static void main(String[] args) throws IOException {
-        Socket socket = null;
-        InputStreamReader inputStreamReader = null;
-        OutputStreamWriter outputStreamWriter = null;
-        BufferedReader bufferedReader = null;
-        BufferedWriter bufferedWriter = null;
-        ServerSocket serverSocket = null;
-
         serverSocket = new ServerSocket(55555);
-
-        while (true){
-            try{
-                socket = serverSocket.accept();
-                inputStreamReader = new InputStreamReader(socket.getInputStream());
-                outputStreamWriter = new OutputStreamWriter(socket.getOutputStream());
-                bufferedReader = new BufferedReader(inputStreamReader);
-                bufferedWriter = new BufferedWriter(outputStreamWriter);
-                while (true){
-                    String msgFromClient = bufferedReader.readLine();
-                    System.out.println("Client: " + msgFromClient);
-                    bufferedWriter.write("Msg Recieved.");
-                    bufferedWriter.newLine();
-                    bufferedWriter.flush();
-
-                    if(msgFromClient.equalsIgnoreCase("BYE")){
-                        break;
-                    }
-                }
-                socket.close();
-                inputStreamReader.close();
-                outputStreamWriter.close();
-                bufferedWriter.close();
-                bufferedReader.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+        while(!serverSocket.isClosed()){
+            Socket socket = serverSocket.accept();
+            System.out.println("A new client has connected");
+            ClientHandler clientHandler = new ClientHandler(socket,String.valueOf(count));
+            count++;
+            clientHandler.listenForMsg();
         }
     }
 }
