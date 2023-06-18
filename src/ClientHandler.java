@@ -17,7 +17,7 @@ public class ClientHandler {
             bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             clientHandlers.add(this);
         } catch (Exception e) {
-            closeConnection();
+            closeConnection(socket, bufferedReader, bufferedWriter);
         }
     }
 
@@ -29,11 +29,14 @@ public class ClientHandler {
                 while (socket.isConnected()){
                     try {
                         msgToSend = bufferedReader.readLine();
-                        System.out.println(msgToSend);
+                        if(msgToSend == null){
+                            closeConnection(socket, bufferedReader, bufferedWriter);
+                            break;
+                        }
                         broadcastMessage(msgToSend);
-
                     } catch (IOException e) {
-                        closeConnection();
+                        closeConnection(socket, bufferedReader, bufferedWriter);
+                        break;
                     }
                 }
             }
@@ -41,27 +44,29 @@ public class ClientHandler {
     }
 
     public void broadcastMessage(String msgToSend){
-        try {
-            for (ClientHandler clientHandler : clientHandlers){
+
+        for (ClientHandler clientHandler : clientHandlers){
+
+            try {
                 if(!clientHandler.username.equals(this.username)){
-                    bufferedWriter.write(msgToSend);
-                    System.out.println("dziala");
-                    bufferedWriter.newLine();
-                    bufferedWriter.flush();
+                    clientHandler.bufferedWriter.write(msgToSend);
+                    clientHandler.bufferedWriter.newLine();
+                    clientHandler.bufferedWriter.flush();
                 }
+            } catch (Exception e) {
+                closeConnection(socket, bufferedReader, bufferedWriter);
             }
-        } catch (IOException e) {
-            closeConnection();
         }
+
     }
 
     public void removeClient(){
         clientHandlers.remove(this);
         broadcastMessage("Client disconnected");
-        System.out.println("Client disconnected");
+        System.out.println("rozłączono");
     }
 
-    public void closeConnection(){
+    public void closeConnection(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter){
         removeClient();
         try{
             if(socket != null){
