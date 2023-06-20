@@ -8,12 +8,15 @@ public class ClientHandler {
     BufferedReader bufferedReader;
     BufferedWriter bufferedWriter;
     String username;
+    EncryptionHandler encryptionHandler;
+
 
     public ClientHandler(Socket socket) {
         try {
             this.socket = socket;
             bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            encryptionHandler = new EncryptionHandler(socket, bufferedReader);
             String temp = bufferedReader.readLine();
             if(temp == null){temp = "not stated";}
             broadcastMessage(temp+" has connected");
@@ -34,6 +37,7 @@ public class ClientHandler {
                         closeConnection(socket, bufferedReader, bufferedWriter);
                         break;
                     }
+                    msgToSend = encryptionHandler.decryptData(msgToSend);
                     broadcastMessage(username + ": " + msgToSend);
                 } catch (IOException e) {
                     closeConnection(socket, bufferedReader, bufferedWriter);
@@ -49,6 +53,7 @@ public class ClientHandler {
 
             try {
                 if(!clientHandler.username.equals(this.username)){
+                    msgToSend = clientHandler.encryptionHandler.encryptData(msgToSend);
                     clientHandler.bufferedWriter.write(msgToSend);
                     clientHandler.bufferedWriter.newLine();
                     clientHandler.bufferedWriter.flush();
